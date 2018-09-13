@@ -8,6 +8,7 @@ const CssRule = {
 };
 
 module.exports = {
+  mode: 'development',
   entry: {
     main: './static_src/styles/base.scss',
     styles: './static_src/js/styles.js',
@@ -17,6 +18,7 @@ module.exports = {
     filename: '[name]-bundle.js',
     path: path.resolve(__dirname, './static/respa_admin/'),
   },
+  devtool: 'source-map',
   module: {
     // Add loader
     rules: [
