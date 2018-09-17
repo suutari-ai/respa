@@ -1066,3 +1066,6 @@ msgstr ""
 
 msgid "Favorite resources"
 msgstr ""
+
+msgid "general administrator status"
+msgstr "universell adminstratör"

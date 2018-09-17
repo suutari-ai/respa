@@ -1062,3 +1062,6 @@ msgstr ""
 
 msgid "Favorite resources"
 msgstr "Suosikkiresurssit"
+
+msgid "general administrator status"
+msgstr "yleinen ylläpitäjä"
