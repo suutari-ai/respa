@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
+import datetime
+import pytz
 
 from django.utils import timezone
 import django.contrib.postgres.fields as pgfields
@@ -11,9 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from psycopg2.extras import DateTimeTZRange
 
-from notifications.models import (
-    NotificationTemplateException, NotificationType, render_notification_template
-)
+from notifications.models import NotificationTemplate, NotificationTemplateException, NotificationType
 from resources.signals import (
     reservation_modified, reservation_confirmed, reservation_cancelled
 )
@@ -24,6 +24,8 @@ from .utils import (
     get_dt, save_dt, is_valid_time_slot, humanize_duration, send_respa_mail,
     DEFAULT_LANG, localize_datetime, format_dt_range
 )
+
+DEFAULT_TZ = pytz.timezone(settings.TIME_ZONE)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,20 @@ class ReservationQuerySet(models.QuerySet):
 
     def active(self):
         return self.filter(end__gte=timezone.now()).current()
+
+    def overlaps(self, begin, end):
+        qs = Q(begin__lt=end) & Q(end__gt=begin)
+        return self.filter(qs)
+
+    def for_date(self, date):
+        if isinstance(date, str):
+            date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        else:
+            assert isinstance(date, datetime.date)
+        dt = datetime.datetime.combine(date, datetime.datetime.min.time())
+        start_dt = DEFAULT_TZ.localize(dt)
+        end_dt = start_dt + datetime.timedelta(days=1)
+        return self.overlaps(start_dt, end_dt)
 
     def extra_fields_visible(self, user):
         # the following logic is also implemented in Reservation.are_extra_fields_visible()
@@ -221,6 +237,8 @@ class Reservation(ModifiableModel):
                 self.send_reservation_confirmed_mail()
             elif self.resource.is_access_code_enabled():
                 self.send_reservation_created_with_access_code_mail()
+            else:
+                self.send_reservation_created_mail()
         elif new_state == Reservation.DENIED:
             self.send_reservation_denied_mail()
         elif new_state == Reservation.CANCELLED:
@@ -268,7 +286,11 @@ class Reservation(ModifiableModel):
         return format_dt_range(translation.get_language(), begin, end)
 
     def __str__(self):
-        return "%s: %s" % (self.format_time(), self.resource)
+        if self.state != Reservation.CONFIRMED:
+            state_str = ' (%s)' % self.state
+        else:
+            state_str = ''
+        return "%s: %s%s" % (self.format_time(), self.resource, state_str)
 
     def clean(self, **kwargs):
         """
@@ -304,6 +326,9 @@ class Reservation(ModifiableModel):
         if not user:
             user = self.user
         with translation.override(language_code):
+            reserver_name = self.reserver_name
+            if not reserver_name and self.user and self.user.get_display_name():
+                reserver_name = self.user.get_display_name()
             context = {
                 'resource': self.resource.name,
                 'begin': localize_datetime(self.begin),
@@ -312,6 +337,9 @@ class Reservation(ModifiableModel):
                 'end_dt': self.end,
                 'time_range': self.format_time(),
                 'number_of_participants': self.number_of_participants,
+                'host_name': self.host_name,
+                'reserver_name': reserver_name,
+                'event_subject': self.event_subject,
             }
             if self.resource.unit:
                 context['unit'] = self.resource.unit.name
@@ -319,6 +347,22 @@ class Reservation(ModifiableModel):
                 context['access_code'] = self.access_code
             if self.resource.reservation_confirmed_notification_extra:
                 context['extra_content'] = self.resource.reservation_confirmed_notification_extra
+
+            # Get last main and ground plan images. Normally there shouldn't be more than one of each
+            # of those images.
+            images = self.resource.images.filter(type__in=('main', 'ground_plan')).order_by('-sort_order')
+            main_image = next((i for i in images if i.type == 'main'), None)
+            ground_plan_image = next((i for i in images if i.type == 'ground_plan'), None)
+
+            if main_image:
+                main_image_url = main_image.get_full_url()
+                if main_image_url:
+                    context['resource_main_image_url'] = main_image_url
+            if ground_plan_image:
+                ground_plan_image_url = ground_plan_image.get_full_url()
+                if ground_plan_image_url:
+                    context['resource_ground_plan_image_url'] = ground_plan_image_url
+
         return context
 
     def send_reservation_mail(self, notification_type, user=None):
@@ -327,6 +371,11 @@ class Reservation(ModifiableModel):
 
         If user isn't given use self.user.
         """
+        try:
+            notification_template = NotificationTemplate.objects.get(type=notification_type)
+        except NotificationTemplate.DoesNotExist:
+            return
+
         if user:
             email_address = user.email
         else:
@@ -339,12 +388,17 @@ class Reservation(ModifiableModel):
         context = self.get_notification_context(language)
 
         try:
-            rendered_notification = render_notification_template(notification_type, context, language)
+            rendered_notification = notification_template.render(context, language)
         except NotificationTemplateException as e:
             logger.error(e, exc_info=True, extra={'user': user.uuid})
             return
 
-        send_respa_mail(email_address, rendered_notification['subject'], rendered_notification['body'])
+        send_respa_mail(
+            email_address,
+            rendered_notification['subject'],
+            rendered_notification['body'],
+            rendered_notification['html_body']
+        )
 
     def send_reservation_requested_mail(self):
         self.send_reservation_mail(NotificationType.RESERVATION_REQUESTED)
@@ -364,6 +418,9 @@ class Reservation(ModifiableModel):
 
     def send_reservation_cancelled_mail(self):
         self.send_reservation_mail(NotificationType.RESERVATION_CANCELLED)
+
+    def send_reservation_created_mail(self):
+        self.send_reservation_mail(NotificationType.RESERVATION_CREATED)
 
     def send_reservation_created_with_access_code_mail(self):
         self.send_reservation_mail(NotificationType.RESERVATION_CREATED_WITH_ACCESS_CODE)

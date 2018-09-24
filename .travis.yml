@@ -1,11 +1,20 @@
-sudo: false
+
+sudo: required
 dist: trusty
+
+services:
+  - docker
 
 language: python
 python:
+  - '3.5'
   - '3.6'
-  - 'nightly'
+  - '3.7-dev'
 
+matrix:
+  allow_failures:
+  - python: 3.7-dev
+  
 cache: pip
 
 # Respa uses int4range (IntegerRangeField) so needs at least Postgres9.2
@@ -26,7 +35,9 @@ before_script:
 
 script: pytest --cov . resources respa_exchange caterings
 
-after_success: codecov
+after_success:
+  - codecov
+  - ./deploy/containerize.sh
 
 notifications:
   slack:

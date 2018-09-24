@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from django.db import models
 from django.utils import translation
+from django.utils.html import strip_tags
 from django.utils.translation import ugettext_lazy as _
 from django.utils.formats import date_format
 from jinja2 import StrictUndefined
@@ -22,6 +23,7 @@ class NotificationType:
     RESERVATION_CANCELLED = 'reservation_cancelled'
     RESERVATION_CONFIRMED = 'reservation_confirmed'
     RESERVATION_DENIED = 'reservation_denied'
+    RESERVATION_CREATED = 'reservation_created'
     RESERVATION_CREATED_WITH_ACCESS_CODE = 'reservation_created_with_access_code'
     CATERING_ORDER_CREATED = 'catering_order_created'
     CATERING_ORDER_MODIFIED = 'catering_order_modified'
@@ -41,6 +43,7 @@ class NotificationTemplate(TranslatableModel):
         (NotificationType.RESERVATION_REQUESTED_OFFICIAL, _('Reservation requested official')),
         (NotificationType.RESERVATION_CANCELLED, _('Reservation cancelled')),
         (NotificationType.RESERVATION_CONFIRMED, _('Reservation confirmed')),
+        (NotificationType.RESERVATION_CREATED, _('Reservation created')),
         (NotificationType.RESERVATION_DENIED, _('Reservation denied')),
         (NotificationType.RESERVATION_CREATED_WITH_ACCESS_CODE, _('Reservation created with access code')),
         (NotificationType.CATERING_ORDER_CREATED, _('Catering order created')),
@@ -61,7 +64,10 @@ class NotificationTemplate(TranslatableModel):
         subject=models.CharField(
             verbose_name=_('Subject'), max_length=200, help_text=_('Subject for email notifications')
         ),
-        body=models.TextField(verbose_name=_('body'), help_text=_('Text body for email notifications'))
+        body=models.TextField(verbose_name=_('Body'), help_text=_('Text body for email notifications'), blank=True),
+        html_body=models.TextField(
+            verbose_name=_('HTML body'), help_text=_('HTML body for email notifications'), blank=True,
+        )
     )
 
     class Meta:
@@ -73,6 +79,37 @@ class NotificationTemplate(TranslatableModel):
             if t[0] == self.type:
                 return str(t[1])
         return 'N/A'
+
+    def render(self, context, language_code=DEFAULT_LANG):
+        """
+        Render this notification template with given context and language
+
+        Returns a dict containing all content fields of the template. Example:
+
+        {'short_message': 'foo', 'subject': 'bar', 'body': 'baz', 'html_body': '<b>foobar</b>'}
+
+        """
+
+        env = SandboxedEnvironment(trim_blocks=True, lstrip_blocks=True, undefined=StrictUndefined)
+        env.filters['reservation_time'] = reservation_time
+        env.filters['format_datetime'] = format_datetime
+        env.filters['format_datetime_tz'] = format_datetime_tz
+
+        logger.debug('Rendering template for notification %s' % self.type)
+        with switch_language(self, language_code):
+            try:
+                rendered_notification = {
+                    attr: env.from_string(getattr(self, attr)).render(context)
+                    for attr in ('short_message', 'subject', 'html_body')
+                }
+                if self.body:
+                    rendered_notification['body'] = env.from_string(self.body).render(context)
+                else:
+                    # if text body is empty use html body without tags as text body
+                    rendered_notification['body'] = strip_tags(rendered_notification['html_body'])
+                return rendered_notification
+            except TemplateError as e:
+                raise NotificationTemplateException(e) from e
 
 
 def reservation_time(res):
@@ -99,30 +136,9 @@ def format_datetime_tz(dt, tz):
 
 
 def render_notification_template(notification_type, context, language_code=DEFAULT_LANG):
-    """
-    Render a notification template with given context
-
-    Returns a dict containing all content fields of the template. Example:
-
-    {'short_message': 'foo', 'subject': 'bar', 'body': 'baz'}
-
-    """
     try:
         template = NotificationTemplate.objects.get(type=notification_type)
     except NotificationTemplate.DoesNotExist as e:
         raise NotificationTemplateException(e) from e
 
-    env = SandboxedEnvironment(trim_blocks=True, lstrip_blocks=True, undefined=StrictUndefined)
-    env.filters['reservation_time'] = reservation_time
-    env.filters['format_datetime'] = format_datetime
-    env.filters['format_datetime_tz'] = format_datetime_tz
-
-    logger.info('Rendering template for notification %s' % notification_type)
-    with switch_language(template, language_code):
-        try:
-            return {
-                attr: env.from_string(getattr(template, attr)).render(context)
-                for attr in ('short_message', 'subject', 'body')
-            }
-        except TemplateError as e:
-            raise NotificationTemplateException(e) from e
+    return template.render(context, language_code)
