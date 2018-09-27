@@ -16,6 +16,7 @@ urlpatterns = [
                      views.tunnistamo_login, name='tunnistamo-login'),
     unauthorized_url(r'^logout/$', views.logout, name='logout'),
     url(r'^resources/$', ResourceListView.as_view(), name='resources'),
+    url(r'^units/$', views.UnitListView.as_view(), name='units'),
     url(r'^office/$', admin_office, name='office'),
     url(r'^resource/new/$', SaveResourceView.as_view(), name='new-resource'),
     url(r'^resource/edit/(?P<resource_id>\w+)/$', SaveResourceView.as_view(), name='edit-resource'),

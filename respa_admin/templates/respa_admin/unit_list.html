@@ -1,0 +1,79 @@
+{% extends "respa_admin/_base.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block koro_shape %}
+    <section class="hero-section bg-light">
+        <div class="container">
+            <div class="headline">
+                <div class="resources-report row">
+                    <h1 class="col-sm-6">{% trans 'All units I manage' %}</h1>
+                    <span class="col-sm-6 resources-count">{{ paginator.count }} kpl</span>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock koro_shape %}
+
+{% block body %}
+<section class='resources'>
+    <div class='container'>
+        <div class='resource-list container-fluid'>
+            <ul class='list-group'>
+                <li class="list-group-item sort-bar">
+                    <div class='pull-left empty-holder col-1'></div>
+                    <button class="col-2 btn">
+                        {% trans 'Name' %} <span class='glyphicon glyphicon-sort' aria-hidden="true"></span>
+                    </button>
+                    <button class="col-3 btn">
+                        {% trans 'Availability' %} <span class='glyphicon glyphicon-sort' aria-hidden="true"></span>
+                    </button>
+                    <button class="col-4 btn">
+                        {% trans 'Visibility' %} <span class='glyphicon glyphicon-sort' aria-hidden="true"></span>
+                    </button>
+                </li>
+                {% for unit in units %}
+                    <li class="list-group-item">
+                        <div class='panel panel-default'>
+                            <img
+                                class="img-rounded pull-left"
+                                alt=""
+                                src={% if unit.main_image %}
+                                    "{{ unit.main_image.url }}"
+                                {% else %}
+                                    ""
+                                {% endif %}
+                            >
+                            <div class="panel-body">
+                                <div class="col-2">
+                                    <a href="{# {% url 'respa_admin:edit-unit' unit_id=unit.id %} #}">
+                                        <span>{{ unit.unit_groups.first.name }}</span>
+                                        <h4>{{ unit.name }}</h4>
+                                    </a>
+                                </div>
+                                <div class="col-3">
+                                    <h6> <div class='shape-success'></div> {% trans 'Bookable' %}</h6>
+                                </div>
+                                <div class="col-4">
+                                    <h6>
+                                        <div class='shape-warning'></div>
+                                        {{ unit.public|yesno:"Julkaistu,Ei julkaistu" }}
+                                    </h6>
+                                </div>
+                                <div class="col-5">
+                                    <h6>
+                                        <span class='glyphicon glyphicon-pencil icon-left' aria-hidden="true"></span>
+                                        <a href="{# {% url 'respa_admin:edit-unit' unit_id=unit.id %} #}">{% trans 'Edit' %}</a>
+                                    </h6>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% include "respa_admin/common/_pagination.html" %}
+        </div>
+    </div>
+</section>
+{% endblock body %}
