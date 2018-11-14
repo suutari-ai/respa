@@ -1,5 +1,6 @@
 Django<2
 django-modeltranslation
+--no-binary psycopg2
 psycopg2
 django-munigeo
 djangorestframework

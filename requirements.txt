@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
+--no-binary psycopg2
+
 -e git+git://github.com/Tampere/django-tamusers.git@d4f78bfb1cbff278d02b1bcccd330393f8e78d86#egg=django-tamusers
 arrow==0.12.0
 asn1crypto==0.23.0        # via cryptography
