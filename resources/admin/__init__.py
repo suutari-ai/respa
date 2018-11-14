@@ -79,8 +79,8 @@ class ResourceAdmin(PopulateCreatedAndModifiedMixin, CommonExcludeMixin, Transla
         ResourceGroupInline,
     ]
 
-    default_lon = 2776460  # Central Railway Station in EPSG:3857
-    default_lat = 8438120
+    default_lon = 2645044  # Tampere in EPSG:3857
+    default_lat = 8741092
     default_zoom = 12
 
     list_display = ('name', 'unit', 'public', 'reservable')
@@ -99,8 +99,8 @@ class UnitAdmin(PopulateCreatedAndModifiedMixin, CommonExcludeMixin, FixedGuarde
         PeriodInline
     ]
 
-    default_lon = 2776460  # Central Railway Station in EPSG:3857
-    default_lat = 8438120
+    default_lon = 2645044  # Tampere in EPSG:3857
+    default_lat = 8741092
     default_zoom = 12
 
     def save_model(self, request, obj, form, change):

@@ -17,7 +17,7 @@ from rest_framework.fields import BooleanField, IntegerField
 from rest_framework import renderers
 from rest_framework.exceptions import NotAcceptable, ValidationError
 
-from helusers.jwt import JWTAuthentication
+from tamusers.jwt import JWTAuthentication
 from munigeo import api as munigeo_api
 from resources.models import Reservation, Resource, ReservationMetadataSet
 from resources.models.reservation import RESERVATION_EXTRA_FIELDS

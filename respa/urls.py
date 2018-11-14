@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.conf import settings
 from django.conf.urls.static import static
-from helusers import admin
+from tamusers import admin
 from django.views.generic.base import RedirectView
 
 from resources.api import RespaAPIRouter

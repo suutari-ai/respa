@@ -17,7 +17,7 @@ coverage
 django-cors-headers
 django-image-cropping
 easy_thumbnails
-django-helusers
+-e git+git://github.com/Tampere/django-tamusers.git@d4f78bfb1cbff278d02b1bcccd330393f8e78d86#egg=django-tamusers
 django-allauth
 djangorestframework-jwt
 pyjwt

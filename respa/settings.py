@@ -43,7 +43,7 @@ SITE_ID = 1
 
 # Application definition
 INSTALLED_APPS = [
-    'helusers',
+    'tamusers',
     'modeltranslation',
     'parler',
     'grappelli',
@@ -71,7 +71,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'helusers.providers.helsinki',
+    'tamusers.providers.tampere',
 
     'munigeo',
 
@@ -200,13 +200,13 @@ AUTHENTICATION_BACKENDS = (
 )
 
 SOCIALACCOUNT_PROVIDERS = {
-    'helsinki': {
+    'tampere': {
         'VERIFIED_EMAIL': True
     }
 }
 LOGIN_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_ON_GET = True
-SOCIALACCOUNT_ADAPTER = 'helusers.adapter.SocialAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'tamusers.adapter.SocialAccountAdapter'
 
 
 # REST Framework
@@ -217,13 +217,13 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'helusers.jwt.JWTAuthentication',
+        'tamusers.jwt.JWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'resources.pagination.DefaultPagination',
 }
 
 JWT_AUTH = {
-    'JWT_PAYLOAD_GET_USER_ID_HANDLER': 'helusers.jwt.get_user_id_from_payload_handler',
+    'JWT_PAYLOAD_GET_USER_ID_HANDLER': 'tamusers.jwt.get_user_id_from_payload_handler',
     'JWT_AUDIENCE': env.str('JWT_AUDIENCE'),
     'JWT_SECRET_KEY': env.str('JWT_SECRET_KEY')
 }

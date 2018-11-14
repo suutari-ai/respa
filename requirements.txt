@@ -6,6 +6,7 @@
 #
 --no-binary psycopg2
 
+-e git+git://github.com/Tampere/django-tamusers.git@d4f78bfb1cbff278d02b1bcccd330393f8e78d86#egg=django-tamusers
 arrow==0.12.0
 asn1crypto==0.23.0        # via cryptography
 attrs==17.3.0             # via pytest
@@ -28,7 +29,6 @@ django-environ==0.4.4
 django-filter==1.1.0
 django-grappelli==2.10.1
 django-guardian==1.4.9
-django-helusers==0.4.2
 django-hstore==1.4.2
 django-image-cropping==1.1.0
 django-jinja==2.4.1
@@ -41,7 +41,7 @@ django-sanitized-dump==0.2.1
 django==1.11.11
 djangorestframework-jwt==1.11.0
 djangorestframework==3.7.3
-drf-oidc-auth==0.9        # via django-helusers
+drf-oidc-auth==0.9
 easy-thumbnails==2.5
 fake-factory==9999.9.9
 first==2.0.1              # via pip-tools
