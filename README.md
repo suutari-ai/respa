@@ -4,6 +4,28 @@
 
 respa – Resource reservation and management service
 ===================
+Respa is a backend service for reserving and managing resources (e.g. meeting rooms, equipment, personnel). The open two-way REST API is interoperable with the [6Aika Resource reservation API specification](https://github.com/6aika/api-resurssienvaraus) created by the six largest cities in Finland. You can explore the API at [api.hel.fi](https://api.hel.fi/respa/v1/) and view the API documentation at [dev.hel.fi](https://dev.hel.fi/apis/respa/).
+
+User interfaces for Respa developed by the City of Helsinki are [Varaamo](https://github.com/City-of-Helsinki/varaamo) and [Huvaja](https://github.com/City-of-Helsinki/huvaja), and the now-defunct [Stadin Tilapankki](https://github.com/City-of-Helsinki/tilapankki). The City of Hämeenlinna has developed a [Berth Reservation UI](https://github.com/CityOfHameenlinna/hmlvaraus-frontend) and [backend](https://github.com/CityOfHameenlinna/hmlvaraus-backend) on top of Respa.
+
+Editing data can be done by using a simple UI based on Django admin.
+
+Used by
+------------
+
+- [City of Helsinki](https://api.hel.fi/respa/v1/) - for [Varaamo UI](https://varaamo.hel.fi/) & [Huvaja UI](https://huonevaraus.hel.fi/)
+- [City of Espoo](https://api.hel.fi/respa/v1/) - for [Varaamo UI](https://varaamo.espoo.fi/)
+- [City of Vantaa](https://api.hel.fi/respa/v1/) - for [Varaamo UI](https://varaamo.vantaa.fi/)
+- [City of Oulu](https://varaamo-api.ouka.fi/v1/) - for [Varaamo UI](https://varaamo.ouka.fi/)
+- [City of Mikkeli](https://mikkeli-respa.metatavu.io/v1/) - for [Varaamo UI](https://varaamo.mikkeli.fi/)
+- [City of Tampere](https://respa.tampere.fi/v1/) - for [Varaamo UI](https://varaamo.tampere.fi/)
+- City of Hämeenlinna - for [Berth Reservation UI](https://varaukset.hameenlinna.fi/)
+
+FAQ
+------------
+
+### Why is it called Respa?
+Short for "RESurssiPAlvelu" i.e. Resource Service.
 
 Installation
 ------------
@@ -28,6 +50,14 @@ sudo -u postgres createdb -Orespa respa
 sudo -u postgres psql respa -c "CREATE EXTENSION postgis;"
 ```
 
+### Build Respa Admin static resources
+
+Make sure you have Node 8 or LTS and yarn installed.
+
+```shell
+./build-resources
+```
+
 ### Run Django migrations and import data
 
 ```shell
@@ -39,8 +69,17 @@ python manage.py resources_import --all tprek
 python manage.py resources_import --all kirjastot
 ```
 
+### Dev environment configuration
+
+Create a file `respa/.env` to configure the dev environment e.g.:
+
+```
+DEBUG=1
+INTERNAL_IPS='127.0.0.1'
+```
+
 ### Settings
-- `RESPA_IMAGE_BASE_URL`: Base URL used when building image URLs in email notifications. Example value: `'https://api.hel.fi/respa/'`.
+- `RESPA_IMAGE_BASE_URL`: Base URL used when building image URLs in email notifications. Example value: `'https://api.hel.fi'`.
 
 - *TODO* document rest of relevant settings.
 
@@ -56,6 +95,42 @@ Ready to roll!
   * Failing to do this while setting `GEOS_LIBRARY_PATH`/`GDAL_LIBRARY_PATH` will result in
     "Module not found" errors or similar, which can be annoying to track down.
 
+### Respa Admin authentication
+
+Respa Admin views require logged in user with staff status.  For local
+development you can log in via Django Admin login page to an account
+with staff privileges and use that session to access the Respa Admin.
+
+When accessing the Respa Admin without being logged in, the login
+happens with Tunnistamo.  To test the Tunnistamo login flow in local
+development environment this needs either real Respa app client id and
+client secret in the production Tunnistamo or modifying tamusers to use
+local Tunnistamo.  The client id and client secret should be configured
+in Django Admin or shell within a socialaccount.SocialApp instance with
+id "helsinki".  When adding the app to Tunnistamo, the OAuth2 callback
+URL for the app should be something like:
+http://localhost:8000/accounts/tampere/login/callback/
+
+When the Tunnistamo registration is configured and the login is working,
+then go to Django Admin and set the `is_staff` flag on for the user that
+got created when testing the login.  This allows the user to use the
+Respa Admin.
+
+Installation with Docker
+------------------------
+
+```shell
+# Setup multicontainer environment
+docker-compose up
+
+# Start development server
+docker exec -it respa-api python manage.py runserver 0:8000
+
+# Import database dump
+cat <name_of_the_sanitized_respa_dump>.sql | docker exec -i respa-db psql -U postgres -d respa
+```
+
+Try: http://localhost:8000/ra/resource/
 
 Production considerations
 -------------------------
@@ -138,3 +213,13 @@ pinned versions for updates.
 To remove a dependency, remove it from `requirements.in`,
 run `pip-compile` and then `pip-sync`. If everything works
 as expected, commit the changes.
+
+Contributing
+------------
+
+Your contributions are always welcome! If you want to report a bug or see a new feature feel free to create a new [Issue](https://github.com/City-of-Helsinki/respa/issues/new) or discuss it with us on [Gitter](https://gitter.im/City-of-Helsinki/heldev). Alternatively, you can create a pull request (base master branch). Your PR will be reviewed by the project tech lead.
+
+License
+------------
+
+Usage is provided under the [MIT License](https://github.com/City-of-Helsinki/respa/blob/master/LICENSE).
