@@ -143,11 +143,11 @@ strategy:
     object_pk: null
     permission_id: null
     user_id: null
-  helusers_adgroup:
+  tamusers_adgroup:
     display_name: null
     id: null
     name: null
-  helusers_adgroupmapping:
+  tamusers_adgroupmapping:
     ad_group_id: null
     group_id: null
     id: null
