@@ -104,12 +104,12 @@ with staff privileges and use that session to access the Respa Admin.
 When accessing the Respa Admin without being logged in, the login
 happens with Tunnistamo.  To test the Tunnistamo login flow in local
 development environment this needs either real Respa app client id and
-client secret in the production Tunnistamo or modifying helusers to use
+client secret in the production Tunnistamo or modifying tamusers to use
 local Tunnistamo.  The client id and client secret should be configured
 in Django Admin or shell within a socialaccount.SocialApp instance with
 id "helsinki".  When adding the app to Tunnistamo, the OAuth2 callback
 URL for the app should be something like:
-http://localhost:8000/accounts/helsinki/login/callback/
+http://localhost:8000/accounts/tampere/login/callback/
 
 When the Tunnistamo registration is configured and the login is working,
 then go to Django Admin and set the `is_staff` flag on for the user that

@@ -9,10 +9,10 @@ tunnistamo_login_url = reverse('respa_admin:tunnistamo-login')
 
 
 @pytest.mark.django_db
-def test_tunnistamo_login_redirects_to_helsinki_login(client):
+def test_tunnistamo_login_redirects_to_tampere_login(client):
     response = client.get(tunnistamo_login_url)
     assert response.status_code == 302
-    assert response.url == '/accounts/helsinki/login/'
+    assert response.url == '/accounts/tampere/login/'
 
 
 @pytest.mark.django_db
@@ -29,7 +29,7 @@ def test_tunnistamo_login_when_already_logged_in_as_non_staff(client):
     assert initial_login_ok
     response = client.get(tunnistamo_login_url)
     assert response.status_code == 302
-    assert response.url == 'https://api.hel.fi/sso/logout/?next={url}'.format(
+    assert response.url == 'https://auth.tampere.fi/logout/?next={url}'.format(
         url=('http://testserver/ra/login/tunnistamo/'
              .replace(':', '%3A').replace('/', '%2F')))
 
@@ -116,5 +116,5 @@ def test_logout(client):
     response = client.get(reverse('respa_admin:logout'))
     assert response.status_code == 302
     assert response.url == (
-        'https://api.hel.fi/sso/logout/?next=http%3A%2F%2Ftestserver%2Fra%2F')
+        'https://auth.tampere.fi/logout/?next=http%3A%2F%2Ftestserver%2Fra%2F')
     assert '_auth_user_id' not in client.session
